@@ -4,8 +4,8 @@ Einfache Lernapp für einen 16-jährigen KV-Lernenden im ersten Lehrjahr in Zür
 
 ## Nutzen
 
-- Neun kurze Lektionen mit Beispielen, Merksätzen und Kurz-Check
-- 30 Fragen, zufällige Übungsrunden, gezielte Fehlerwiederholung
+- Neun kurze Lektionen mit Beispielen, Merksätzen, freiem Erklären und Kurz-Check
+- 45 Fragen, zufällige Übungsrunden, gezielte Fehlerwiederholung
 - Probetest mit zwölf Fragen: alle neun Lernziele und drei Rechenaufgaben
 - Lohn- und Leasingrechner mit transparenten Annahmen
 - Browserlokaler Lernfortschritt; keine Anmeldung innerhalb der App

@@ -21,3 +21,7 @@ Direktes Öffnen von `file://` wird vom verwalteten Browser administrativ blocki
 ## Ausführen
 
 `node scripts/qa.mjs` im verwendeten Prüfcontainer (Playwright und axe-core werden aus dessen vorhandener Installation geladen).
+
+## Vertiefte Prüfung nach Nutzerfeedback
+
+Siehe [PRUEFBERICHT.md](PRUEFBERICHT.md). Zusätzlich `node scripts/review-qa.mjs` bestanden: alle 45 Fragen, neun freie Erkläraufgaben, Übernahme vorhandener Lernstände, unabhängige Zahlen-Referenzwerte, mobile Wiederaufnahme, Speicherhinweise sowie erweiterte Barrierefreiheitschecks für Quiz und Auswertung.

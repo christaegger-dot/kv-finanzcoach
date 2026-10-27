@@ -23,8 +23,10 @@ const KEY = 'finanzcoach-v1';
 const freshState = () => ({completed:[],mastered:[],mistakes:[],bestTest:null,testCount:0});
 let storageWorks = true;
 function loadState(){
+  let raw;
+  try {raw=localStorage.getItem(KEY);}catch{storageWorks=false;return freshState();}
   try {
-    const v=JSON.parse(localStorage.getItem(KEY)||'null');
+    const v=JSON.parse(raw||'null');
     if(!v || typeof v!=='object')return freshState();
     const questionIds=new Set(QUESTIONS.map(q=>q.id));
     return {
@@ -34,7 +36,7 @@ function loadState(){
       bestTest:Number.isInteger(v.bestTest)&&v.bestTest>=0&&v.bestTest<=100?v.bestTest:null,
       testCount:Number.isInteger(v.testCount)&&v.testCount>=0?v.testCount:0
     };
-  }catch{storageWorks=false;return freshState();}
+  }catch{return freshState();}
 }
 let progress=loadState();
 let quiz=null;
@@ -45,7 +47,8 @@ const dialog=document.getElementById('info-dialog');
 const money = n => new Intl.NumberFormat('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
 const compactMoney = n => new Intl.NumberFormat('de-CH',{maximumFractionDigits:2}).format(n);
 const shuffle = list => {const a=[...list];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
-function saveState(){try{localStorage.setItem(KEY,JSON.stringify(progress));}catch{if(storageWorks){storageWorks=false;toast('Speichern ist in diesem Browser nicht möglich. Dein Fortschritt bleibt für diese Sitzung erhalten.');}}}
+function updateStorageNotice(){const note=document.getElementById('storage-note');if(note)note.hidden=storageWorks;}
+function saveState(){try{localStorage.setItem(KEY,JSON.stringify(progress));storageWorks=true;}catch{storageWorks=false;}updateStorageNotice();}
 function toast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('visible'),4500);}
 function updateQuestion(id,correct){
   if(correct){if(!progress.mastered.includes(id))progress.mastered.push(id);progress.mistakes=progress.mistakes.filter(x=>x!==id);}
@@ -63,20 +66,20 @@ function heading(kicker,title,description){return `<div class="page-intro"><div 
 function home(){
   const next=nextLesson();
   main.innerHTML=`<section class="hero"><div class="hero-copy"><div class="eyebrow">DEIN GELD. DEIN DURCHBLICK.</div><h1>Privatfinanzen?<br><em>Hast du im Griff.</em></h1><p>Lohn, Schulden und Leasing – in kleinen Schritten fit für deinen KV-Test.</p><a class="btn" href="#lesson/${next.id}">${progress.completed.length?'Weiterlernen':'Los geht’s'} ${icon('arrow')}</a></div>${heroArt()}</section>
-  <section class="stats" aria-label="Dein Lernfortschritt"><div class="stat"><span class="stat-symbol">${icon('book')}</span><div><div class="stat-value">${progress.completed.length} <small>/ 9</small></div><div class="stat-label">Lernziele abgeschlossen</div></div></div><div class="stat"><span class="stat-symbol">${icon('bolt')}</span><div><div class="stat-value">${progress.mastered.length} <small>/ ${QUESTIONS.length}</small></div><div class="stat-label">Fragen richtig beantwortet</div></div></div><div class="stat"><span class="stat-symbol">${icon('trophy')}</span><div><div class="stat-value">${progress.bestTest===null?'–':progress.bestTest+' %'}</div><div class="stat-label">Dein bester Probetest</div></div></div></section>
+  <section class="stats" aria-label="Dein Lernfortschritt"><div class="stat"><span class="stat-symbol">${icon('book')}</span><div><div class="stat-value">${progress.completed.length} <small>/ 9</small></div><div class="stat-label">Lektionen abgeschlossen</div></div></div><div class="stat"><span class="stat-symbol">${icon('bolt')}</span><div><div class="stat-value">${progress.mastered.length} <small>/ ${QUESTIONS.length}</small></div><div class="stat-label">Fragen zuletzt richtig</div></div></div><div class="stat"><span class="stat-symbol">${icon('trophy')}</span><div><div class="stat-value">${progress.bestTest===null?'–':progress.bestTest+' %'}</div><div class="stat-label">Dein bester Probetest</div></div></div></section>
   <section aria-labelledby="topics-title"><div class="section-heading"><div><h2 id="topics-title">Dein Lernpfad</h2><p>9 Lernziele. Drei Themen. Alles in deinem Tempo.</p></div><a href="#learn">Alle ansehen ${icon('arrow')}</a></div><div class="topic-grid">${GROUPS.map((g,index)=>{const done=g.lessons.filter(n=>progress.completed.includes(n)).length;return `<a href="#learn/${g.id}" class="topic-card ${g.color}"><div class="topic-top"><span class="topic-icon">${icon(g.icon)}</span><span class="topic-index">0${index+1}</span></div><h3>${g.title}</h3><p>${g.description}</p><div class="topic-meta">${g.lessons.length} ${g.lessons.length===1?'Lernziel':'Lernziele'} <span>·</span> ca. ${g.time}</div><div class="progress-track" role="progressbar" aria-label="${g.title}: abgeschlossene Lernziele" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${g.lessons.length}"><span style="width:${done/g.lessons.length*100}%"></span></div><div class="topic-footer"><span>${done} von ${g.lessons.length} abgeschlossen</span>${icon('arrow')}</div></a>`;}).join('')}</div></section>
   <aside class="tip-strip">${icon('bulb')}<div><strong>Lieber kurz lernen. Dafür öfter.</strong><p>Starte mit einer Lektion und teste danach dein Wissen. Fünf Minuten reichen für den Anfang.</p></div><a href="#practice">Direkt üben ${icon('arrow')}</a></aside>
   ${quiz&&!quiz.finished?`<div class="tip-strip">${icon('refresh')}<div><strong>Deine ${quiz.mode==='test'?'Testrunde':'Übungsrunde'} wartet.</strong><p>Du bist bei Frage ${quiz.index+1} von ${quiz.questions.length}.</p></div><a href="#quiz">Fortsetzen ${icon('arrow')}</a></div>`:''}`;
 }
 function learn(){
-  main.innerHTML=heading('SCHRITT FÜR SCHRITT','Dein Lernpfad','Kurz lesen, Beispiel verstehen, eine Frage knacken. Du kannst überall einsteigen.')+`<div class="overview-line"><div class="progress-track"><span style="width:${progress.completed.length/9*100}%"></span></div><span>${progress.completed.length} von 9 Lernzielen abgeschlossen</span></div>`+GROUPS.map(g=>`<section class="lesson-group ${g.color}" id="group-${g.id}"><div class="group-title"><span class="topic-icon">${icon(g.icon)}</span><h2>${g.title}</h2><span>ca. ${g.time}</span></div><div class="lesson-list">${g.lessons.map(id=>{const l=LESSONS.find(x=>x.id===id);const done=progress.completed.includes(id);return `<a class="lesson-row ${done?'done':''}" href="#lesson/${id}"><span class="lesson-number">${done?icon('check'):String(id).padStart(2,'0')}</span><div class="lesson-row-content"><h3>${l.title}</h3><p>${done?'Abgeschlossen · gerne nochmals anschauen':l.subtitle}</p></div><span class="lesson-time">${l.time}</span>${icon('chevron')}</a>`;}).join('')}</div></section>`).join('');
+  main.innerHTML=heading('SCHRITT FÜR SCHRITT','Dein Lernpfad','Kurz lesen, Beispiel verstehen, eine Frage knacken. Erkläre den Inhalt danach in eigenen Worten.')+`<div class="overview-line"><div class="progress-track"><span style="width:${progress.completed.length/9*100}%"></span></div><span>${progress.completed.length} von 9 Lektionen abgeschlossen</span></div>`+GROUPS.map(g=>`<section class="lesson-group ${g.color}" id="group-${g.id}"><div class="group-title"><span class="topic-icon">${icon(g.icon)}</span><h2>${g.title}</h2><span>ca. ${g.time}</span></div><div class="lesson-list">${g.lessons.map(id=>{const l=LESSONS.find(x=>x.id===id);const done=progress.completed.includes(id);return `<a class="lesson-row ${done?'done':''}" href="#lesson/${id}"><span class="lesson-number">${done?icon('check'):String(id).padStart(2,'0')}</span><div class="lesson-row-content"><h3>${l.title}</h3><p>${done?'Abgeschlossen · gerne nochmals anschauen':l.subtitle}</p></div><span class="lesson-time">${l.time}</span>${icon('chevron')}</a>`;}).join('')}</div></section>`).join('');
 }
 function lesson(id){
   const l=LESSONS.find(x=>x.id===id);if(!l){location.hash='learn';return;}
   const group=GROUPS.find(g=>g.lessons.includes(id));
   if(mini.lesson!==id)mini={lesson:id,selected:null,checked:false};
-  const q=QUESTIONS.find(x=>x.lesson===id&&!x.type);
-  main.innerHTML=`<a href="#learn" class="back-link">${icon('left')} Zurück zum Lernpfad</a>`+heading(`LERNZIEL ${id} VON 9 · ${group.title.toUpperCase()}`,l.title,l.subtitle)+`<div class="reading-layout"><div><article class="lesson-article">${l.html}</article><section class="mini-check" aria-labelledby="mini-title"><div class="eyebrow">KURZ-CHECK</div><h3 id="mini-title">${q.q}</h3><div class="choice-list" id="mini-options"></div><div id="mini-feedback"></div><button class="btn" data-action="check-mini" id="check-mini" disabled>Antwort prüfen ${icon('check')}</button></section><div class="lesson-actions">${id>1?`<a href="#lesson/${id-1}" class="btn secondary">${icon('left')} Vorheriges Lernziel</a>`:''}<a href="${id<9?'#lesson/'+(id+1):'#practice'}" class="btn">${id<9?'Nächstes Lernziel':'Jetzt üben'} ${icon('arrow')}</a></div></div><aside class="lesson-aside"><div class="memory-card">${icon('bulb')}<h3>Dein Merksatz</h3><p>${l.memory}</p></div>${l.sources.length?`<p class="lesson-source">Grundlagen: ${l.sources.map(n=>`<a href="${SOURCES[n].url}" target="_blank" rel="noopener noreferrer">${SOURCES[n].by.split(' · ')[0]}</a>`).join(' · ')}<br>Geprüft am 27.10.2026</p>`:''}</aside></div>`;
+  const q=QUESTIONS.find(x=>x.lesson===id&&!x.type),recall=RECALL[id];
+  main.innerHTML=`<a href="#learn" class="back-link">${icon('left')} Zurück zum Lernpfad</a>`+heading(`LERNZIEL ${id} VON 9 · ${group.title.toUpperCase()}`,l.title,l.subtitle)+`<div class="reading-layout"><div><article class="lesson-article">${l.html}</article><section class="recall-panel" aria-labelledby="recall-title"><div class="eyebrow">IN EIGENEN WORTEN</div><h2 id="recall-title">Kannst du’s erklären?</h2><p class="recall-goal">Dein Lernziel: ${esc(recall.goal)}</p><p>${esc(recall.prompt)}</p><details class="explain-check"><summary>Mit einer Beispielantwort vergleichen</summary><p>${esc(recall.model)}</p><p class="recall-note">Erst selbst laut erklären oder auf Papier antworten. Das ist ein Selbstcheck und wird nicht automatisch bewertet.</p></details></section><section class="mini-check" aria-labelledby="mini-title"><div class="eyebrow">KURZ-CHECK</div><h3 id="mini-title">${q.q}</h3><div class="choice-list" id="mini-options"></div><div id="mini-feedback"></div><button class="btn" data-action="check-mini" id="check-mini" disabled>Antwort prüfen ${icon('check')}</button></section><div class="lesson-actions">${id>1?`<a href="#lesson/${id-1}" class="btn secondary">${icon('left')} Vorheriges Lernziel</a>`:''}<a href="${id<9?'#lesson/'+(id+1):'#practice'}" class="btn">${id<9?'Nächstes Lernziel':'Jetzt üben'} ${icon('arrow')}</a></div></div><aside class="lesson-aside"><div class="memory-card">${icon('bulb')}<h3>Dein Merksatz</h3><p>${l.memory}</p></div>${l.sources.length?`<p class="lesson-source">Grundlagen: ${l.sources.map(n=>`<a href="${SOURCES[n].url}" target="_blank" rel="noopener noreferrer">${SOURCES[n].by.split(' · ')[0]}</a>`).join(' · ')}<br>Geprüft am 27.10.2026</p>`:''}</aside></div>`;
   renderMini();
 }
 function renderMini(){
@@ -84,7 +87,7 @@ function renderMini(){
   if(!q || !document.getElementById('mini-options'))return;
   document.getElementById('mini-options').innerHTML=q.options.map((o,i)=>`<button class="choice ${mini.selected===i?'selected':''} ${mini.checked&&i===q.answer?'correct':''} ${mini.checked&&mini.selected===i&&i!==q.answer?'wrong':''}" data-mini-choice="${i}" aria-pressed="${mini.selected===i}" ${mini.checked?'disabled':''}><span class="choice-letter">${mini.checked&&i===q.answer?icon('check'):String.fromCharCode(65+i)}</span><span>${esc(o)}</span></button>`).join('');
   const b=document.getElementById('check-mini');b.disabled=mini.selected===null;b.hidden=mini.checked;
-  if(mini.checked){const correct=mini.selected===q.answer;document.getElementById('mini-feedback').innerHTML=`<div class="feedback ${correct?'':'wrong'}" tabindex="-1"><strong>${correct?'Richtig. Lernziel abgeschlossen!':'Noch nicht ganz. Schau dir die Erklärung an.'}</strong>${q.explain}</div>${!correct?'<button class="btn secondary" data-action="retry-mini">Nochmals versuchen</button>':''}`;}
+  if(mini.checked){const correct=mini.selected===q.answer;document.getElementById('mini-feedback').innerHTML=`<div class="feedback ${correct?'':'wrong'}" tabindex="-1"><strong>${correct?'Richtig. Lektion abgeschlossen!':'Noch nicht ganz. Schau dir die Erklärung an.'}</strong>${q.explain}</div>${!correct?'<button class="btn secondary" data-action="retry-mini">Nochmals versuchen</button>':''}`;}
 }
 function practice(){
   main.innerHTML=heading('AUS WISSEN WIRD KÖNNEN','Kurz üben. Mehr verstehen.','Hier darfst du Fehler machen. Du bekommst zu jeder Antwort eine Erklärung.')+`<div class="practice-grid"><section class="practice-start primary"><span class="topic-icon">${icon('bolt')}</span><h2>Eine kleine Übungsrunde</h2><p>8 gemischte Fragen zu Lohn, Schulden und Leasing. Ohne Zeitdruck, mit direktem Feedback.</p><button class="btn" data-action="start-practice">Runde starten ${icon('arrow')}</button></section><section class="practice-start"><span class="topic-icon">${icon('refresh')}</span><h2>Das schaue ich nochmals an</h2><p>${progress.mistakes.length?`${progress.mistakes.length} ${progress.mistakes.length===1?'Frage wartet':'Fragen warten'} auf eine zweite Runde. Wiederhole genau das, was zuletzt noch schwierig war.`:'Hier landen Fragen, die du falsch beantwortest. Aktuell gibt es nichts zu wiederholen.'}</p><button class="btn secondary" data-action="start-mistakes" ${progress.mistakes.length?'':'disabled'}>Fehler wiederholen ${icon('arrow')}</button></section></div>
@@ -112,7 +115,7 @@ function numericValue(raw){const v=String(raw).trim().replace(/[’'\s]/g,'').re
 function answerReady(){const q=quiz.questions[quiz.index];return q.type==='number'?Number.isFinite(numericValue(quiz.number)):quiz.selected!==null;}
 function isCorrect(q,value){return q.type==='number'?Number.isFinite(value)&&Math.abs(value-q.answer)<0.005:value===q.answer;}
 function quizView(){
-  if(!quiz){testIntro();return;}
+  if(!quiz){main.innerHTML=heading('DEINE NÄCHSTE RUNDE','Neu starten, weiterlernen.','Die laufende Runde wurde beim Neuladen beendet. Deine gespeicherten Lernfortschritte bleiben erhalten.')+'<a class="btn" href="#practice">Zum Üben '+icon('arrow')+'</a>';return;}
   if(quiz.finished){results();return;}
   const q=quiz.questions[quiz.index],test=quiz.mode==='test';
   const correct=quiz.checked&&quiz.answers[quiz.index]?.correct;
@@ -204,7 +207,7 @@ document.addEventListener('click',event=>{
   else if(action==='check-mini'&&!mini.checked&&mini.selected!==null){
     mini.checked=true;const q=QUESTIONS.find(x=>x.lesson===mini.lesson&&!x.type),correct=mini.selected===q.answer;
     updateQuestion(q.id,correct);
-    if(correct&&!progress.completed.includes(mini.lesson)){progress.completed.push(mini.lesson);toast('Lernziel abgeschlossen. Ein Schritt weiter!');}
+    if(correct&&!progress.completed.includes(mini.lesson)){progress.completed.push(mini.lesson);toast('Lektion abgeschlossen. Ein Schritt weiter!');}
     saveState();renderMini();document.querySelector('#mini-feedback .feedback')?.focus({preventScroll:true});
   }
   else if(action==='retry-mini'){mini.selected=null;mini.checked=false;document.getElementById('mini-feedback').innerHTML='';renderMini();document.querySelector('[data-mini-choice]')?.focus({preventScroll:true});}
@@ -217,3 +220,4 @@ document.addEventListener('submit',event=>{if(event.target.id==='salary-form'){e
 dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
 window.addEventListener('hashchange',route);
 route();
+updateStorageNotice();
