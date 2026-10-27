@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#174c3b">
+  <meta name="description" content="Dein Lerncoach für den KV-Test: Lohn, Schulden und Leasing einfach verstehen und üben. Für das erste Lehrjahr in der Schweiz.">
+  <title>FinanzCoach · Dein KV-Lerncoach</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script src="data.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Zum Inhalt</a>
+  <aside class="sidebar" aria-label="Hauptnavigation">
+    <a class="brand" href="#home" aria-label="FinanzCoach Startseite"><span class="brand-icon">f<span>↗</span></span><span>Finanz<span class="brand-light">Coach</span><small>DEIN KV-LERNCOACH</small></span></a>
+    <div class="sidebar-label">DEIN LERNRAUM</div>
+    <nav id="main-nav"></nav>
+    <div class="sidebar-bottom"><div class="level-tag"><span class="status-dot"></span> KV · 1. Lehrjahr</div><p>Kleine Schritte.<br>Mehr Durchblick.</p><button class="text-button" data-action="sources">Quellen & Infos <span aria-hidden="true">↗</span></button></div>
+  </aside>
+  <div class="page-shell">
+    <header class="topbar"><span class="breadcrumb" id="breadcrumb">Dein Lernraum <span>/</span> Übersicht</span><div class="topbar-right"><span class="swiss-tag"><span aria-hidden="true">✚</span> Schweiz</span><span class="avatar" aria-label="Dein persönlicher Lernraum">KV</span></div></header>
+    <main id="main" tabindex="-1"></main>
+    <footer class="footer"><span>Dein Tempo. Dein Fortschritt.</span><div><button class="text-button" data-action="sources">Quellen & Infos</button><a href="finanzcoach-offline.html" download>Offline-Version ↓</a><button class="text-button" data-action="reset">Fortschritt löschen</button></div></footer>
+  </div>
+  <dialog id="info-dialog" aria-labelledby="dialog-title"></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">Bitte aktiviere JavaScript, um die Lernapp zu nutzen.</p></noscript>
+</body>
+</html>
